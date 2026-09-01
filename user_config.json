@@ -1,0 +1,17 @@
+{
+    "WALK_TO_PROCESS": [
+        [
+            "w",
+            2.0
+        ]
+    ],
+    "CHECK_INTERVAL": 2.0,
+    "PROCESS_POLL": 3.0,
+    "PROCESS_TIMEOUT": 600,
+    "E_MENU_DELAY": 2.5,
+    "TRUNK_OPEN_DELAY": 3.0,
+    "WALK_SETTLE_DELAY": 1.0,
+    "CAPTURE_MODE": "screen",
+    "PARK_GAME_OFFSCREEN": false,
+    "RESTORE_FOCUS_AFTER": true
+}

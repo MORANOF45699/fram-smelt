@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+
+templates/calibration.json
+
+debug_images/
+logs/
+*.log
+
+*.msix

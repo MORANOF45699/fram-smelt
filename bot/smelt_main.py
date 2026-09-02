@@ -80,12 +80,14 @@ def check_calibration():
 
 
 def bot_loop():
-    state = {"active": False}
+    # at_process = ตอนนี้ยืนอยู่จุดแปรรูปแล้วหรือยัง
+    state = {"active": False, "at_process": False}
 
     def toggle():
         state["active"] = not state["active"]
         if state["active"]:
             clear_abort()
+            state["at_process"] = False   # เริ่มใหม่ = ไม่รู้ว่ายืนตรงไหน เดินไปจุดโพก่อน
             set_status("เริ่มทำงาน", "#2ecc71")
         else:
             request_abort()
@@ -102,7 +104,7 @@ def bot_loop():
 
             config.reload_user_config()
 
-            ok = one_cycle(sct, lambda m: set_status(m, "#3498db"))
+            ok = one_cycle(sct, state, lambda m: set_status(m, "#3498db"))
             if ok:
                 fails = 0
                 set_status("จบรอบ - เริ่มรอบใหม่", "#2ecc71")

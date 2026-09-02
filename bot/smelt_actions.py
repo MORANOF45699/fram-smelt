@@ -1,13 +1,16 @@
 """
 smelt_actions.py - ลำดับการทำงานของบอทแปรรูป
 
-ลูป 1 รอบ:
-  1. อยู่ที่เสา GARAGE -> กด E เปิดเมนู -> กด L เปิดท้ายรถ
-  2. เอาแท่งที่โพเสร็จ (ถ้ามีในกระเป๋า) ใส่ท้ายรถ
-  3. ดึงแร่ดิบจากท้ายรถออกมา (Max)
-  4. ESC ปิด -> เดินไปจุดแปรรูป
-  5. กด E เริ่มแปรรูป -> รอจนแถบ Processing หาย
-  6. เดินกลับเสา -> วนข้อ 1
+ลูป:
+  ยืนที่จุดแปรรูป กด E
+    - แถบ Processing ขึ้น = ยังมีแร่ในตัว -> รอจนเสร็จ -> กด E ต่อเลย
+    - แถบไม่ขึ้น = แร่หมด -> เดินกลับเสา GARAGE
+                    -> E เปิดเมนู -> L เปิดท้ายรถ
+                    -> เก็บแท่งที่โพเสร็จเข้าท้ายรถ
+                    -> ดึงแร่ดิบออกมา (Max) -> ESC
+                    -> เดินกลับจุดแปรรูป -> กด E ต่อ
+
+แร่ 1 กระเป๋าโพได้หลายรอบ จึงไม่ต้องวิ่งไปท้ายรถทุกรอบ
 
 ความปลอดภัย: คลิกเมาส์ตอนไม่มีหน้าต่างเปิด = ต่อยคนที่ยืนแถวนั้น
 บอทจะคลิกเฉพาะตอนยืนยันได้ว่าหน้าต่างท้ายรถเปิดจริงเท่านั้น
@@ -169,15 +172,15 @@ def take_ore(sct):
                       config.DROP_TO_INVENTORY, "แร่ดิบ", "ดึง")
 
 
-def start_processing(sct):
-    """เดินไปจุดแปรรูป กด E เริ่ม แล้วยืนยันว่าแถบ Processing ขึ้นจริง"""
-    print(f"[โพ] เดินไปจุดแปรรูป {config.WALK_TO_PROCESS}")
-    inp.walk(config.WALK_TO_PROCESS)
-    time.sleep(config.WALK_SETTLE_DELAY)
-
+def press_start_process(sct):
+    """
+    กด E เริ่มแปรรูป (ไม่เดิน - ต้องยืนอยู่จุดโพแล้ว)
+    Returns: True ถ้าแถบ Processing ขึ้น = มีแร่ในตัว โพได้
+             False = ไม่มีแร่ในตัวแล้ว ต้องไปเอาจากท้ายรถ
+    """
     check_bar = template_available(config.PROCESS_BAR_TEMPLATE)
     if not check_bar:
-        print("[โพ] (ข้ามการยืนยันแถบ Processing - ยังไม่มี process_bar.png)")
+        print("[โพ] (ไม่มี process_bar.png - เดาว่าโพติด)")
 
     for attempt in range(1, config.PROCESS_START_RETRIES + 1):
         if _aborted("โพ"):
@@ -188,13 +191,19 @@ def start_processing(sct):
         if not check_bar:
             return True
         if is_processing(sct):
-            print("[โพ] แถบ Processing ขึ้นแล้ว")
+            print("[โพ] แถบ Processing ขึ้นแล้ว - ยังมีแร่ในตัว")
             return True
         print("[โพ] แถบ Processing ไม่ขึ้น - ลองกด E ใหม่")
 
-    save_debug_screenshot(sct, "process_not_started")
-    print("[โพ] เริ่มแปรรูปไม่ได้")
+    print("[โพ] กด E แล้วไม่ติด - แร่ในตัวน่าจะหมดแล้ว")
     return False
+
+
+def walk_to_process():
+    """เดินจากเสา GARAGE ไปจุดแปรรูป"""
+    print(f"[เดิน] ไปจุดแปรรูป {config.WALK_TO_PROCESS}")
+    inp.walk(config.WALK_TO_PROCESS)
+    time.sleep(config.WALK_SETTLE_DELAY)
 
 
 def wait_processing(sct, on_status=None):
@@ -238,13 +247,14 @@ def walk_back_to_pole():
     time.sleep(config.WALK_SETTLE_DELAY)
 
 
-def one_cycle(sct, on_status=None):
+def refill_from_trunk(sct, on_status=None):
     """
-    ทำครบ 1 รอบ: เก็บแท่ง -> ดึงแร่ -> เดินไปโพ -> รอเสร็จ -> เดินกลับ
-    Returns: True ถ้าครบรอบ
+    ไปเอาแร่จากท้ายรถ: เปิดท้ายรถ -> เก็บแท่งที่โพเสร็จ -> ดึงแร่ใหม่
+    (ต้องยืนอยู่ที่เสา GARAGE แล้ว)
+    Returns: True ถ้าได้แร่มา
     """
     def status(msg):
-        print(f"[รอบ] {msg}")
+        print(f"[เติม] {msg}")
         if on_status:
             on_status(msg)
 
@@ -258,25 +268,61 @@ def one_cycle(sct, on_status=None):
     status("ดึงแร่ดิบออกจากท้ายรถ")
     got_ore = take_ore(sct)
 
-    print("[รอบ] กด ESC ปิดหน้าต่าง")
+    print("[เติม] กด ESC ปิดหน้าต่าง")
     inp.press_esc()
     time.sleep(config.AFTER_CLOSE_DELAY)
 
     if not got_ore:
-        print("[รอบ] ไม่มีแร่ดิบในท้ายรถแล้ว - หยุดรอบนี้")
-        return False
+        print("[เติม] ไม่มีแร่ดิบในท้ายรถแล้ว")
+    return got_ore
+
+
+def one_cycle(sct, state, on_status=None):
+    """
+    ทำ 1 รอบ โดยจำว่าตอนนี้ยืนอยู่ตรงไหน (state["at_process"])
+
+    มีแร่ในตัว -> โพเลย ไม่ต้องไปท้ายรถ
+    แร่หมด    -> เดินกลับเสา เอาแท่งเก็บ ดึงแร่ใหม่ เดินกลับมาโพ
+
+    Returns: True ถ้ารอบนี้ได้โพจริง
+    """
+    def status(msg):
+        if on_status:
+            on_status(msg)
 
     if _aborted("รอบ"):
         return False
 
-    status("เดินไปแปรรูป")
-    if not start_processing(sct):
-        walk_back_to_pole()
+    # ยังไม่ได้อยู่จุดโพ -> เดินไปก่อน
+    if not state.get("at_process"):
+        status("เดินไปจุดแปรรูป")
+        walk_to_process()
+        state["at_process"] = True
+
+    # ลองโพก่อนเลย - ติดแปลว่ายังมีแร่ในตัว
+    status("กด E เริ่มแปรรูป")
+    if press_start_process(sct):
+        status("รอแปรรูปเสร็จ")
+        wait_processing(sct, on_status)
+        return True
+
+    # โพไม่ติด = แร่หมด -> ไปเอาจากท้ายรถ
+    status("แร่หมด - เดินกลับไปเอาที่ท้ายรถ")
+    walk_back_to_pole()
+    state["at_process"] = False
+
+    if not refill_from_trunk(sct, on_status):
+        return False
+
+    status("เดินกลับไปจุดแปรรูป")
+    walk_to_process()
+    state["at_process"] = True
+
+    status("กด E เริ่มแปรรูป")
+    if not press_start_process(sct):
+        save_debug_screenshot(sct, "process_not_started")
         return False
 
     status("รอแปรรูปเสร็จ")
-    done = wait_processing(sct, on_status)
-
-    status("เดินกลับเสา")
-    walk_back_to_pole()
-    return done
+    wait_processing(sct, on_status)
+    return True

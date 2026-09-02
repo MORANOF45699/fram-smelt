@@ -62,7 +62,7 @@ WALK_BACK = [["w", 2.3]]
 # ก่อนเดินทุกครั้ง: กด S 1 ที -> รอ WALK_PREP_DELAY -> กด C 1 ที -> รอ WALK_PREP_AFTER
 # ไม่ทำแบบนี้ตัวละครเดินไม่ตรง
 WALK_PREP = True
-WALK_PREP_DELAY = 2.0
+WALK_PREP_DELAY = 4.0
 WALK_PREP_AFTER = 0.3
 
 # ===== หน้า SYSTEM GARAGE (กด E ที่เสา) =====

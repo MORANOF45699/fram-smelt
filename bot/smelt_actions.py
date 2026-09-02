@@ -254,7 +254,8 @@ def walk_to_process():
     """เดินจากเสา GARAGE ไปจุดแปรรูป"""
     print(f"[เดิน] ไปจุดแปรรูป {config.WALK_TO_PROCESS}")
     inp.walk(config.WALK_TO_PROCESS, prep=config.WALK_PREP,
-             prep_delay=config.WALK_PREP_DELAY,
+             prep_c1_delay=config.WALK_PREP_C1_DELAY,
+             prep_s_delay=config.WALK_PREP_S_DELAY,
              prep_after=config.WALK_PREP_AFTER)
     time.sleep(config.WALK_SETTLE_DELAY)
 
@@ -320,12 +321,14 @@ def walk_back_to_pole():
         # ตั้งขากลับไว้เอง (เดินถอยหลังช้ากว่าเดินหน้า เลยต้องใช้เวลาต่างกัน)
         print(f"[กลับ] เดินกลับเสา GARAGE {back}")
         inp.walk(back, prep=config.WALK_PREP,
-                 prep_delay=config.WALK_PREP_DELAY,
+                 prep_c1_delay=config.WALK_PREP_C1_DELAY,
+                 prep_s_delay=config.WALK_PREP_S_DELAY,
                  prep_after=config.WALK_PREP_AFTER)
     else:
         print("[กลับ] เดินกลับเสา GARAGE (กลับด้านปุ่มอัตโนมัติ)")
         inp.walk_back(config.WALK_TO_PROCESS, prep=config.WALK_PREP,
-                      prep_delay=config.WALK_PREP_DELAY,
+                      prep_c1_delay=config.WALK_PREP_C1_DELAY,
+                      prep_s_delay=config.WALK_PREP_S_DELAY,
                       prep_after=config.WALK_PREP_AFTER)
     time.sleep(config.WALK_SETTLE_DELAY)
 

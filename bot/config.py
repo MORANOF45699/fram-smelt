@@ -59,10 +59,12 @@ WALK_TO_PROCESS = [["w", 2.3]]
 # เว้นว่าง [] = กลับด้านปุ่มอัตโนมัติ (w->s) ซึ่งจะเดินถอยหลัง ช้ากว่ามาก
 WALK_BACK = [["w", 2.3]]
 
-# ก่อนเดินทุกครั้ง: กด S 1 ที -> รอ WALK_PREP_DELAY -> กด C 1 ที -> รอ WALK_PREP_AFTER
-# ไม่ทำแบบนี้ตัวละครเดินไม่ตรง
+# ก่อนเดินทุกครั้ง (ไม่ทำตัวละครจะเดินไม่ตรง):
+#   กด C -> รอ WALK_PREP_C1_DELAY -> กด S -> รอ WALK_PREP_S_DELAY
+#   -> กด C -> รอ WALK_PREP_AFTER -> ค่อยกดปุ่มเดินค้าง
 WALK_PREP = True
-WALK_PREP_DELAY = 4.0
+WALK_PREP_C1_DELAY = 1.0
+WALK_PREP_S_DELAY = 2.0
 WALK_PREP_AFTER = 0.3
 
 # ===== หน้า SYSTEM GARAGE (กด E ที่เสา) =====
@@ -191,7 +193,8 @@ def _load_user_config():
             g["MAX_FAILS"] = int(data["MAX_FAILS"])
         for key in ("CHECK_INTERVAL", "PROCESS_POLL", "PROCESS_TIMEOUT",
                     "E_MENU_DELAY", "TRUNK_OPEN_DELAY", "WALK_SETTLE_DELAY",
-                    "WALK_PREP_DELAY", "WALK_PREP_AFTER"):
+                    "WALK_PREP_C1_DELAY", "WALK_PREP_S_DELAY",
+                    "WALK_PREP_AFTER"):
             if key in data:
                 g[key] = float(data[key])
         for key in ("CAPTURE_MODE",):

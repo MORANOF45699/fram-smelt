@@ -135,6 +135,10 @@ AFTER_MOVE_DELAY = 2.0       # รอหลังยืนยันย้าย�
 AFTER_CLOSE_DELAY = 1.5      # รอหลังกด ESC
 WALK_SETTLE_DELAY = 1.0      # รอหลังเดินถึงที่
 
+# ===== หยุดเองเมื่อพลาดติดกัน =====
+# รอบไม่สำเร็จติดกันกี่ครั้งถึงหยุดบอท (0 = ไม่หยุดเอง วนลองใหม่เรื่อย ๆ)
+MAX_FAILS = 5
+
 # ===== ความปลอดภัย =====
 # คลิกเมาส์ตอนไม่มีหน้าต่างเกมเปิด = ต่อยคนที่ยืนอยู่แถวนั้น
 # บอทจะคลิกเฉพาะตอนยืนยันได้ว่าหน้าต่างเปิดจริงเท่านั้น
@@ -183,6 +187,8 @@ def _load_user_config():
             g["WALK_TO_PROCESS"] = list(data["WALK_TO_PROCESS"])
         if "WALK_BACK" in data:
             g["WALK_BACK"] = list(data["WALK_BACK"])
+        if "MAX_FAILS" in data:
+            g["MAX_FAILS"] = int(data["MAX_FAILS"])
         for key in ("CHECK_INTERVAL", "PROCESS_POLL", "PROCESS_TIMEOUT",
                     "E_MENU_DELAY", "TRUNK_OPEN_DELAY", "WALK_SETTLE_DELAY",
                     "WALK_PREP_DELAY", "WALK_PREP_AFTER"):

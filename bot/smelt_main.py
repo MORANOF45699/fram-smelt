@@ -88,6 +88,7 @@ def bot_loop():
         if state["active"]:
             clear_abort()
             state["at_process"] = False   # เริ่มใหม่ = ไม่รู้ว่ายืนตรงไหน เดินไปจุดโพก่อน
+            state["reset_fails"] = True
             set_status("เริ่มทำงาน", "#2ecc71")
         else:
             request_abort()
@@ -109,6 +110,9 @@ def bot_loop():
 
             config.reload_user_config()
 
+            if state.pop("reset_fails", False):
+                fails = 0
+
             # โหมดจับหน้าจอ: เกมต้องไม่โดนหน้าต่างอื่นบัง/ถูกย่อ
             # โหมดจับหน้าต่าง: ทับได้ ข้ามการเช็คนี้
             if sct.mode == "screen" and not inp.game_covers_point(hud_x, hud_y):
@@ -125,7 +129,19 @@ def bot_loop():
                 set_status("จบรอบ - เริ่มรอบใหม่", "#2ecc71")
             else:
                 fails += 1
-                set_status(f"รอบนี้ไม่สำเร็จ ({fails}) - ลองใหม่", "#e74c3c")
+                limit = config.MAX_FAILS
+                if limit and fails >= limit:
+                    # พลาดติดกันหลายรอบ = มีอะไรผิดจริง หยุดดีกว่าปล่อยวนมั่ว
+                    state["active"] = False
+                    request_abort()
+                    inp.unpark_game()
+                    set_status(f"พลาดติดกัน {fails} รอบ - หยุดบอท (กด F10 เริ่มใหม่)",
+                               "#e74c3c")
+                    fails = 0
+                else:
+                    suffix = f"/{limit}" if limit else ""
+                    set_status(f"รอบนี้ไม่สำเร็จ ({fails}{suffix}) - ลองใหม่",
+                               "#e74c3c")
             time.sleep(config.CHECK_INTERVAL)
 
 

@@ -55,6 +55,11 @@ def _region(fl, ft, fw, fh):
 # *** ต้องจับเวลาเองหน้างานแล้วใส่ตรงนี้ ***
 WALK_TO_PROCESS = [["w", 2.3]]
 
+# ขากลับ: เว้นว่าง [] = กลับด้านปุ่มจากขาไปให้อัตโนมัติ (w->s)
+# แต่ในเกมเดินถอยหลังช้ากว่าเดินหน้ามาก กด S เท่าเดิมจะถอยไม่ถึง
+# ตั้งเองได้ เช่น [["s", 4.0]]  หรือหันกลับแล้วเดินหน้า [["w", 2.3]]
+WALK_BACK = [["s", 4.0]]
+
 # ก่อนเดินทุกครั้ง: กด S 1 ที -> รอ WALK_PREP_DELAY -> กด C 1 ที -> รอ WALK_PREP_AFTER
 # ไม่ทำแบบนี้ตัวละครเดินไม่ตรง
 WALK_PREP = True
@@ -177,6 +182,8 @@ def _load_user_config():
         g = globals()
         if "WALK_TO_PROCESS" in data:
             g["WALK_TO_PROCESS"] = list(data["WALK_TO_PROCESS"])
+        if "WALK_BACK" in data:
+            g["WALK_BACK"] = list(data["WALK_BACK"])
         for key in ("CHECK_INTERVAL", "PROCESS_POLL", "PROCESS_TIMEOUT",
                     "E_MENU_DELAY", "TRUNK_OPEN_DELAY", "WALK_SETTLE_DELAY",
                     "WALK_PREP_DELAY", "WALK_PREP_AFTER"):
@@ -221,6 +228,7 @@ if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")
     print(f"จอ: {SCREEN_W}x{SCREEN_H}  SCALE={SCALE:.3f}")
     print(f"เดินไปจุดโพ      = {WALK_TO_PROCESS}")
+    print(f"เดินกลับเสา      = {WALK_BACK or '(กลับด้านอัตโนมัติ)'}")
     print(f"BTN_MAX          = {BTN_MAX}")
     print(f"BTN_CONFIRM      = {BTN_CONFIRM}")
     print(f"INVENTORY_REGION = {INVENTORY_REGION}")

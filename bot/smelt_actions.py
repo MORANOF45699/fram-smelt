@@ -283,10 +283,18 @@ def wait_processing(sct, on_status=None):
 
 def walk_back_to_pole():
     """เดินกลับไปที่เสา GARAGE (กลับด้านปุ่มจากขาไป)"""
-    print("[กลับ] เดินกลับเสา GARAGE")
-    inp.walk_back(config.WALK_TO_PROCESS, prep=config.WALK_PREP,
-                  prep_delay=config.WALK_PREP_DELAY,
-                  prep_after=config.WALK_PREP_AFTER)
+    back = getattr(config, "WALK_BACK", None)
+    if back:
+        # ตั้งขากลับไว้เอง (เดินถอยหลังช้ากว่าเดินหน้า เลยต้องใช้เวลาต่างกัน)
+        print(f"[กลับ] เดินกลับเสา GARAGE {back}")
+        inp.walk(back, prep=config.WALK_PREP,
+                 prep_delay=config.WALK_PREP_DELAY,
+                 prep_after=config.WALK_PREP_AFTER)
+    else:
+        print("[กลับ] เดินกลับเสา GARAGE (กลับด้านปุ่มอัตโนมัติ)")
+        inp.walk_back(config.WALK_TO_PROCESS, prep=config.WALK_PREP,
+                      prep_delay=config.WALK_PREP_DELAY,
+                      prep_after=config.WALK_PREP_AFTER)
     time.sleep(config.WALK_SETTLE_DELAY)
 
 

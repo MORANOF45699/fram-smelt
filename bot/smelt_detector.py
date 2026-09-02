@@ -17,6 +17,25 @@ import config
 DEBUG_DIR = config.DEBUG_DIR
 
 
+def _imread(path):
+    """อ่านภาพได้แม้ path มีอักษรไทย (cv2.imread ใช้ path แบบ ANSI อ่านไม่ออก)"""
+    try:
+        data = np.fromfile(path, dtype=np.uint8)
+    except OSError:
+        return None
+    if data.size == 0:
+        return None
+    return cv2.imdecode(data, cv2.IMREAD_COLOR)
+
+
+def _imwrite(path, img):
+    """เขียนภาพได้แม้ path มีอักษรไทย"""
+    ok, buf = cv2.imencode(".png", img)
+    if ok:
+        buf.tofile(path)
+    return ok
+
+
 def _grab(sct, region):
     return cv2.cvtColor(np.array(sct.grab(region)), cv2.COLOR_BGRA2BGR)
 
@@ -36,7 +55,7 @@ _cache = {}
 
 def _template(path):
     if path not in _cache:
-        img = cv2.imread(path)
+        img = _imread(path)
         _cache[path] = _scale_template(img) if img is not None else None
     return _cache[path]
 
@@ -104,6 +123,25 @@ def find_item(sct, template_path, region, label="ไอเทม"):
     return (x, y)
 
 
+def region_snapshot(sct, region):
+    """ภาพย่อของบริเวณหนึ่ง ไว้เทียบว่ามีอะไรเปลี่ยนไปไหม"""
+    return _grab(sct, region).copy()
+
+
+def region_changed(sct, region, before, min_px=200):
+    """
+    บริเวณนี้เปลี่ยนไปจากภาพ before ไหม
+    ใช้ยืนยันว่า "มีของถูกย้ายออกไปจริง" แม้จะยังเหลือของชนิดเดิมอยู่
+    """
+    after = _grab(sct, region)
+    if before is None or before.shape != after.shape:
+        return True
+    diff = cv2.absdiff(cv2.cvtColor(before, cv2.COLOR_BGR2GRAY),
+                       cv2.cvtColor(after, cv2.COLOR_BGR2GRAY))
+    changed = cv2.countNonZero(cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)[1])
+    return changed >= min_px
+
+
 def _prune_debug(name, keep):
     try:
         old = sorted(f for f in os.listdir(DEBUG_DIR)
@@ -122,6 +160,6 @@ def save_debug_screenshot(sct, name):
     os.makedirs(DEBUG_DIR, exist_ok=True)
     bgr = _grab(sct, sct.monitors[1])
     path = os.path.join(DEBUG_DIR, f"{name}_{int(time.time())}.png")
-    cv2.imwrite(path, bgr)
+    _imwrite(path, bgr)
     _prune_debug(name, keep)
     print(f"[detector] บันทึก debug: {path}")

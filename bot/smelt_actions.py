@@ -22,6 +22,7 @@ import config
 import smelt_input as inp
 from smelt_detector import (find_item, is_garage_menu_open, is_trunk_open,
                             is_processing, template_available,
+                            region_snapshot, region_changed,
                             save_debug_screenshot)
 
 _abort = [False]
@@ -116,10 +117,14 @@ def open_trunk(sct):
     return False
 
 
-def _move_item(sct, template, from_region, to_base, label, tag):
+def _move_item(sct, template, from_region, to_region, to_base, label, tag,
+               debug_name="move_failed"):
     """
     ลากไอเทมข้ามฝั่ง แล้วกด Max -> O
-    ลองหลายจุดปล่อย เผื่อช่องแรกมีของอยู่แล้ว
+
+    เกณฑ์ว่าสำเร็จ: ไอเทมไปโผล่ฝั่งปลายทาง
+    (ห้ามใช้ "หายไปจากฝั่งต้นทาง" — ท้ายรถมีของมากกว่าที่กระเป๋ารับไหว
+     ดึง Max แล้วยังเหลือของเดิมอยู่ ทั้งที่ย้ายสำเร็จ)
     Returns: True ถ้าย้ายได้
     """
     if not _can_click(sct, tag):
@@ -132,8 +137,10 @@ def _move_item(sct, template, from_region, to_base, label, tag):
 
         slot = find_item(sct, template, from_region, label)
         if slot is None:
+            print(f"[{tag}] ไม่มี{label}ให้ย้ายแล้ว")
             return False
 
+        before = region_snapshot(sct, from_region)
         drop = candidates[(attempt - 1) % len(candidates)]
         print(f"[{tag}] ลาก{label} {slot} -> {drop} "
               f"(ครั้งที่ {attempt}/{config.DRAG_RETRIES})")
@@ -146,13 +153,15 @@ def _move_item(sct, template, from_region, to_base, label, tag):
         inp.click(*config.BTN_CONFIRM)
         time.sleep(config.AFTER_MOVE_DELAY)
 
-        # หายไปจากฝั่งเดิม = ย้ายสำเร็จ
-        if find_item(sct, template, from_region, label) is None:
-            print(f"[{tag}] ย้าย{label}สำเร็จ")
+        if find_item(sct, template, to_region, label) is not None:
+            print(f"[{tag}] ย้าย{label}สำเร็จ (เจอที่ปลายทางแล้ว)")
             return True
-        print(f"[{tag}] {label}ยังอยู่ที่เดิม - ลองจุดปล่อยถัดไป")
+        if region_changed(sct, from_region, before):
+            print(f"[{tag}] ฝั่งต้นทางเปลี่ยนไป — ถือว่าย้ายสำเร็จ")
+            return True
+        print(f"[{tag}] ไม่มีอะไรขยับ - ลองจุดปล่อยถัดไป")
 
-    save_debug_screenshot(sct, f"move_failed_{tag}")
+    save_debug_screenshot(sct, debug_name)
     return False
 
 
@@ -163,13 +172,15 @@ def store_bars(sct):
         print("[เก็บ] ไม่มีแท่งที่โพเสร็จในกระเป๋า - ข้าม")
         return True
     return _move_item(sct, config.BAR_TEMPLATE, config.INVENTORY_REGION,
-                      config.DROP_TO_TRUNK, "แท่งที่โพเสร็จ", "เก็บ")
+                      config.TRUNK_REGION, config.DROP_TO_TRUNK,
+                      "แท่งที่โพเสร็จ", "เก็บ", "store_bars_failed")
 
 
 def take_ore(sct):
     """ดึงแร่ดิบจากท้ายรถออกมาใส่กระเป๋า (Max)"""
     return _move_item(sct, config.ORE_TEMPLATE, config.TRUNK_REGION,
-                      config.DROP_TO_INVENTORY, "แร่ดิบ", "ดึง")
+                      config.INVENTORY_REGION, config.DROP_TO_INVENTORY,
+                      "แร่ดิบ", "ดึง", "take_ore_failed")
 
 
 def press_start_process(sct):

@@ -168,7 +168,7 @@ def hold_key(scan_code, seconds):
 WALK_KEYS = {"w": KEY_W, "s": KEY_S, "a": KEY_A, "d": KEY_D}
 
 
-def prepare_walk(delay=0.5, after=0.3):
+def prepare_walk(delay=2.0, after=0.3):
     """
     ท่าตั้งต้นก่อนเดิน: กด S 1 ที -> รอ -> กด C 1 ที -> รอ
     ไม่ทำแบบนี้ตัวละครจะเดินไม่ตรง (กล้อง/ทิศไม่ถูกจัดก่อน)
@@ -180,7 +180,7 @@ def prepare_walk(delay=0.5, after=0.3):
     time.sleep(after)
 
 
-def walk(steps, prep=True, prep_delay=0.5, prep_after=0.3):
+def walk(steps, prep=True, prep_delay=2.0, prep_after=0.3):
     """
     เดินตามลำดับที่กำหนด
     steps = [("w", 2.0), ("d", 0.5)]  → กด W ค้าง 2 วิ แล้ว D ค้าง 0.5 วิ
@@ -198,7 +198,7 @@ def walk(steps, prep=True, prep_delay=0.5, prep_after=0.3):
         time.sleep(0.2)
 
 
-def walk_back(steps, prep=True, prep_delay=0.5, prep_after=0.3):
+def walk_back(steps, prep=True, prep_delay=2.0, prep_after=0.3):
     """เดินย้อนกลับ — กลับด้านปุ่มแล้วเดินถอยลำดับ"""
     opposite = {"w": "s", "s": "w", "a": "d", "d": "a"}
     walk([(opposite.get(str(k).lower(), k), s) for k, s in reversed(steps)],

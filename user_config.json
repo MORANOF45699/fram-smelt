@@ -15,6 +15,6 @@
     "PARK_GAME_OFFSCREEN": true,
     "RESTORE_FOCUS_AFTER": true,
     "WALK_PREP": true,
-    "WALK_PREP_DELAY": 0.5,
+    "WALK_PREP_DELAY": 2.0,
     "WALK_PREP_AFTER": 0.3
 }

@@ -401,6 +401,22 @@ def _wait_and_release(sct, on_status=None):
 
 def one_cycle(sct, state, on_status=None):
     """
+    ทำ 1 รอบ แล้วคืนโฟกัสให้หน้าต่างที่ผู้ใช้ใช้อยู่ก่อนหน้าเสมอ
+    (บอทต้องแย่งจอไปกดปุ่ม/ลากของ พอเสร็จก็คืนให้)
+    """
+    prev = inp.get_foreground() if config.RESTORE_FOCUS_AFTER else None
+    if prev and prev == inp._find_game_hwnd():
+        prev = None                   # เกมโฟกัสอยู่แล้ว ไม่ต้องคืนอะไร
+    try:
+        return _one_cycle_inner(sct, state, on_status)
+    finally:
+        if prev:
+            print("[รอบ] คืนโฟกัสให้หน้าต่างเดิมของผู้ใช้")
+            inp.restore_foreground(prev)
+
+
+def _one_cycle_inner(sct, state, on_status=None):
+    """
     ทำ 1 รอบ โดยจำว่าตอนนี้ยืนอยู่ตรงไหน (state["at_process"])
 
     มีแร่ในตัว -> โพเลย ไม่ต้องไปท้ายรถ

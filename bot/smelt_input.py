@@ -170,13 +170,13 @@ WALK_KEYS = {"w": KEY_W, "s": KEY_S, "a": KEY_A, "d": KEY_D}
 
 def prepare_walk(delay=2.0, after=0.3):
     """
-    ท่าตั้งต้นก่อนเดิน: กด S 1 ที -> รอ -> กด C 1 ที -> รอ
-    ไม่ทำแบบนี้ตัวละครจะเดินไม่ตรง (กล้อง/ทิศไม่ถูกจัดก่อน)
+    ท่าตั้งต้นก่อนเดิน: กด C 1 ที -> รอ -> กด S 1 ที -> รอ
+    ต้องกด C ก่อน ไม่งั้นมุมกล้องเปลี่ยน แล้วเดินไม่ตรง
     """
-    print("[input] จัดท่าก่อนเดิน: S แล้ว C")
-    press_key(KEY_S)
-    time.sleep(delay)
+    print("[input] จัดท่าก่อนเดิน: C แล้ว S")
     press_key(KEY_C)
+    time.sleep(delay)
+    press_key(KEY_S)
     time.sleep(after)
 
 

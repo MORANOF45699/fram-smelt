@@ -22,10 +22,11 @@ import config
 import smelt_input as inp
 from smelt_detector import (find_item, is_garage_menu_open, is_trunk_open,
                             is_processing, template_available,
-                            region_snapshot, region_changed,
+                            region_snapshot, region_changed, region_diff_pct,
                             save_debug_screenshot)
 
 _abort = [False]
+_idle_ref = [None]     # ภาพบริเวณแถบตอนยังไม่ได้โพ (ไว้เทียบว่าแถบหายยัง)
 
 
 def request_abort():
@@ -190,8 +191,10 @@ def press_start_process(sct):
              False = ไม่มีแร่ในตัวแล้ว ต้องไปเอาจากท้ายรถ
     """
     check_bar = template_available(config.PROCESS_BAR_TEMPLATE)
+    # เก็บภาพบริเวณแถบตอนยังไม่เริ่ม ไว้เทียบทีหลังว่าแถบหายไปหรือยัง
+    _idle_ref[0] = region_snapshot(sct, config.PROCESS_BAR_REGION)
     if not check_bar:
-        print("[โพ] (ไม่มี process_bar.png - เดาว่าโพติด)")
+        print("[โพ] (ไม่มี process_bar.png - ใช้วิธีเทียบภาพแทน)")
 
     for attempt in range(1, config.PROCESS_START_RETRIES + 1):
         if _aborted("โพ"):
@@ -200,7 +203,12 @@ def press_start_process(sct):
         inp.press_e()
         time.sleep(config.WALK_SETTLE_DELAY)
         if not check_bar:
-            return True
+            pct = region_diff_pct(sct, config.PROCESS_BAR_REGION, _idle_ref[0])
+            if pct >= config.PROCESS_CHANGE_MIN_PCT:
+                print(f"[โพ] แถบขึ้นแล้ว (ภาพต่างไป {pct:.1f}%) - ยังมีแร่ในตัว")
+                return True
+            print(f"[โพ] ภาพไม่เปลี่ยน ({pct:.1f}%) - แถบยังไม่ขึ้น")
+            continue
         if is_processing(sct):
             print("[โพ] แถบ Processing ขึ้นแล้ว - ยังมีแร่ในตัว")
             return True
@@ -223,15 +231,35 @@ def wait_processing(sct, on_status=None):
     Returns: True ถ้าเสร็จ, False ถ้าเกินเวลาหรือถูกสั่งพัก
     """
     if not template_available(config.PROCESS_BAR_TEMPLATE):
-        print(f"[โพ] ไม่มี process_bar.png - รอแบบจับเวลา "
-              f"{config.PROCESS_TIMEOUT:.0f} วิ")
-        waited = 0.0
-        while waited < config.PROCESS_TIMEOUT:
+        # ไม่มี template ก็ยังรู้ได้ - เทียบว่าบริเวณแถบเปลี่ยนไปกี่ %
+        # แผงแถบโพหายไป = ภาพกลับไปเหมือนตอนก่อนเริ่ม
+        idle = _idle_ref[0]
+        if idle is None:
+            print(f"[โพ] ไม่มีทั้ง template และภาพอ้างอิง - "
+                  f"รอแบบจับเวลา {config.PROCESS_TIMEOUT:.0f} วิ")
+            waited = 0.0
+            while waited < config.PROCESS_TIMEOUT:
+                if _abort[0]:
+                    return False
+                time.sleep(config.PROCESS_POLL)
+                waited += config.PROCESS_POLL
+            return True
+
+        print("[โพ] ไม่มี process_bar.png - ใช้วิธีเทียบภาพแทน")
+        t0 = time.time()
+        while time.time() - t0 < config.PROCESS_TIMEOUT:
             if _abort[0]:
                 return False
+            pct = region_diff_pct(sct, config.PROCESS_BAR_REGION, idle)
+            if pct < config.PROCESS_CHANGE_MIN_PCT:
+                print(f"[โพ] ภาพกลับเหมือนเดิม ({pct:.1f}%) - แปรรูปเสร็จ "
+                      f"({time.time() - t0:.0f} วิ)")
+                return True
+            if on_status:
+                on_status(f"กำลังแปรรูป... (ต่างจากตอนว่าง {pct:.0f}%)")
             time.sleep(config.PROCESS_POLL)
-            waited += config.PROCESS_POLL
-        return True
+        save_debug_screenshot(sct, "process_timeout")
+        return False
 
     t0 = time.time()
     while time.time() - t0 < config.PROCESS_TIMEOUT:

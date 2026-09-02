@@ -107,6 +107,9 @@ BTN_CONFIRM = _pt(920 / 1920, 618 / 1080)
 PROCESS_BAR_REGION = _region(700 / 1920, 800 / 1080, 520 / 1920, 90 / 1080)
 PROCESS_BAR_TEMPLATE = os.path.join(TEMPLATE_DIR, "process_bar.png")
 PROCESS_BAR_THRESHOLD = 0.60
+# ไม่มี process_bar.png ก็ใช้ได้ - เทียบว่าบริเวณแถบเปลี่ยนไปกี่ %
+# วัดจริงตอนไม่ได้โพ ฉากเกมขยับเองแค่ ~1.4% ส่วนแผงแถบโพขึ้นมาเปลี่ยนเยอะกว่ามาก
+PROCESS_CHANGE_MIN_PCT = 8.0
 PROCESS_POLL = 3.0           # เช็คแถบทุกกี่วินาที
 PROCESS_TIMEOUT = 600        # รอโพนานสุดกี่วินาที ก่อนยอมแพ้แล้วเริ่มรอบใหม่
 PROCESS_START_RETRIES = 3    # กด E เริ่มโพซ้ำได้กี่ครั้ง

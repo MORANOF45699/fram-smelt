@@ -7,7 +7,7 @@
     ],
     "CHECK_INTERVAL": 2.0,
     "PROCESS_POLL": 3.0,
-    "PROCESS_TIMEOUT": 600,
+    "PROCESS_TIMEOUT": 1200,
     "E_MENU_DELAY": 2.5,
     "TRUNK_OPEN_DELAY": 3.0,
     "WALK_SETTLE_DELAY": 1.0,

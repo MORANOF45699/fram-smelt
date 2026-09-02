@@ -142,6 +142,19 @@ def region_changed(sct, region, before, min_px=200):
     return changed >= min_px
 
 
+def region_diff_pct(sct, region, ref, thr=25):
+    """บริเวณนี้ต่างจากภาพอ้างอิงกี่ % ของพื้นที่"""
+    if ref is None:
+        return 100.0
+    now = _grab(sct, region)
+    if ref.shape != now.shape:
+        return 100.0
+    d = cv2.absdiff(cv2.cvtColor(ref, cv2.COLOR_BGR2GRAY),
+                    cv2.cvtColor(now, cv2.COLOR_BGR2GRAY))
+    changed = cv2.countNonZero(cv2.threshold(d, thr, 255, cv2.THRESH_BINARY)[1])
+    return changed / float(now.shape[0] * now.shape[1]) * 100.0
+
+
 def _prune_debug(name, keep):
     try:
         old = sorted(f for f in os.listdir(DEBUG_DIR)

@@ -55,6 +55,12 @@ def _region(fl, ft, fw, fh):
 # *** ต้องจับเวลาเองหน้างานแล้วใส่ตรงนี้ ***
 WALK_TO_PROCESS = [["w", 2.3]]
 
+# ก่อนเดินทุกครั้ง: กด S 1 ที -> รอ WALK_PREP_DELAY -> กด C 1 ที -> รอ WALK_PREP_AFTER
+# ไม่ทำแบบนี้ตัวละครเดินไม่ตรง
+WALK_PREP = True
+WALK_PREP_DELAY = 0.5
+WALK_PREP_AFTER = 0.3
+
 # ===== หน้า SYSTEM GARAGE (กด E ที่เสา) =====
 # region ครอบคำว่า "SYSTEM GARAGE" ด้านบนซ้าย
 GARAGE_MENU_REGION = _region(455 / 1920, 255 / 1080, 300 / 1920, 45 / 1080)
@@ -172,13 +178,14 @@ def _load_user_config():
         if "WALK_TO_PROCESS" in data:
             g["WALK_TO_PROCESS"] = list(data["WALK_TO_PROCESS"])
         for key in ("CHECK_INTERVAL", "PROCESS_POLL", "PROCESS_TIMEOUT",
-                    "E_MENU_DELAY", "TRUNK_OPEN_DELAY", "WALK_SETTLE_DELAY"):
+                    "E_MENU_DELAY", "TRUNK_OPEN_DELAY", "WALK_SETTLE_DELAY",
+                    "WALK_PREP_DELAY", "WALK_PREP_AFTER"):
             if key in data:
                 g[key] = float(data[key])
         for key in ("CAPTURE_MODE",):
             if key in data:
                 g[key] = str(data[key])
-        for key in ("PARK_GAME_OFFSCREEN", "RESTORE_FOCUS_AFTER"):
+        for key in ("PARK_GAME_OFFSCREEN", "RESTORE_FOCUS_AFTER", "WALK_PREP"):
             if key in data:
                 g[key] = bool(data[key])
     except Exception as e:

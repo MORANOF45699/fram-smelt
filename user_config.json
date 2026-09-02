@@ -11,7 +11,10 @@
     "E_MENU_DELAY": 2.5,
     "TRUNK_OPEN_DELAY": 3.0,
     "WALK_SETTLE_DELAY": 1.0,
-    "CAPTURE_MODE": "screen",
-    "PARK_GAME_OFFSCREEN": false,
-    "RESTORE_FOCUS_AFTER": true
+    "CAPTURE_MODE": "window",
+    "PARK_GAME_OFFSCREEN": true,
+    "RESTORE_FOCUS_AFTER": true,
+    "WALK_PREP": true,
+    "WALK_PREP_DELAY": 0.5,
+    "WALK_PREP_AFTER": 0.3
 }

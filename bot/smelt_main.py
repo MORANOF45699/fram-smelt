@@ -91,11 +91,16 @@ def bot_loop():
             set_status("เริ่มทำงาน", "#2ecc71")
         else:
             request_abort()
+            inp.unpark_game()
             set_status("พัก - กด F10 เริ่มต่อ", "#f39c12")
 
     keyboard.add_hotkey(config.KEY_TOGGLE, toggle)
 
     fails = 0
+    covered = [False]
+    hud_x = config.SCREEN_LEFT + config.SCREEN_W // 2
+    hud_y = config.SCREEN_TOP + int(config.SCREEN_H * 0.8)
+
     with smelt_capture.open_capture() as sct:
         while not stop_flag[0]:
             if not state["active"]:
@@ -103,6 +108,16 @@ def bot_loop():
                 continue
 
             config.reload_user_config()
+
+            # โหมดจับหน้าจอ: เกมต้องไม่โดนหน้าต่างอื่นบัง/ถูกย่อ
+            # โหมดจับหน้าต่าง: ทับได้ ข้ามการเช็คนี้
+            if sct.mode == "screen" and not inp.game_covers_point(hud_x, hud_y):
+                if not covered[0]:
+                    set_status("เกมโดนบัง - รอจนเห็นจอเกม", "#f39c12")
+                    covered[0] = True
+                time.sleep(config.CHECK_INTERVAL)
+                continue
+            covered[0] = False
 
             ok = one_cycle(sct, state, lambda m: set_status(m, "#3498db"))
             if ok:
@@ -116,7 +131,8 @@ def bot_loop():
 
 def main():
     import atexit
-    atexit.register(inp.unpark_game)
+    inp.rescue_offscreen_game()       # เกมค้างนอกจอจากรอบก่อน -> ลากกลับ
+    atexit.register(inp.unpark_game)  # ปิดโปรแกรมยังไง เกมต้องกลับเข้าจอ
 
     if not acquire_single_instance():
         print("[smelt] มีบอทตัวอื่นรันอยู่แล้ว - ปิดตัวนี้ทิ้ง")

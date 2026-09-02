@@ -221,7 +221,9 @@ def press_start_process(sct):
 def walk_to_process():
     """เดินจากเสา GARAGE ไปจุดแปรรูป"""
     print(f"[เดิน] ไปจุดแปรรูป {config.WALK_TO_PROCESS}")
-    inp.walk(config.WALK_TO_PROCESS)
+    inp.walk(config.WALK_TO_PROCESS, prep=config.WALK_PREP,
+             prep_delay=config.WALK_PREP_DELAY,
+             prep_after=config.WALK_PREP_AFTER)
     time.sleep(config.WALK_SETTLE_DELAY)
 
 
@@ -282,7 +284,9 @@ def wait_processing(sct, on_status=None):
 def walk_back_to_pole():
     """เดินกลับไปที่เสา GARAGE (กลับด้านปุ่มจากขาไป)"""
     print("[กลับ] เดินกลับเสา GARAGE")
-    inp.walk_back(config.WALK_TO_PROCESS)
+    inp.walk_back(config.WALK_TO_PROCESS, prep=config.WALK_PREP,
+                  prep_delay=config.WALK_PREP_DELAY,
+                  prep_after=config.WALK_PREP_AFTER)
     time.sleep(config.WALK_SETTLE_DELAY)
 
 
@@ -290,8 +294,22 @@ def refill_from_trunk(sct, on_status=None):
     """
     ไปเอาแร่จากท้ายรถ: เปิดท้ายรถ -> เก็บแท่งที่โพเสร็จ -> ดึงแร่ใหม่
     (ต้องยืนอยู่ที่เสา GARAGE แล้ว)
+
+    ขั้นตอนนี้ใช้เมาส์ลาก -> ถ้าจอดเกมไว้นอกจอ ต้องดึงกลับเข้าจอก่อน
+    (cursor ของ Windows ไปพิกัดนอกจอไม่ได้) เสร็จแล้วส่งกลับไปจอดเหมือนเดิม
     Returns: True ถ้าได้แร่มา
     """
+    was_parked = inp.is_parked()
+    if was_parked:
+        inp.unpark_game()
+    try:
+        return _refill_from_trunk_inner(sct, on_status)
+    finally:
+        if was_parked:
+            inp.park_game()
+
+
+def _refill_from_trunk_inner(sct, on_status=None):
     def status(msg):
         print(f"[เติม] {msg}")
         if on_status:
@@ -314,6 +332,31 @@ def refill_from_trunk(sct, on_status=None):
     if not got_ore:
         print("[เติม] ไม่มีแร่ดิบในท้ายรถแล้ว")
     return got_ore
+
+
+def _wait_and_release(sct, on_status=None):
+    """
+    รอโพให้เสร็จ - ช่วงนี้บอทไม่ต้องใช้เกมเลย (แค่ดูภาพ)
+    เลยคืนโฟกัสให้หน้าต่างที่ผู้ใช้ใช้อยู่ และจอดเกมนอกจอได้ถ้าตั้งไว้
+    พอเสร็จค่อยดึงเกมกลับมา
+    """
+    prev = inp.get_foreground() if config.RESTORE_FOCUS_AFTER else None
+    if prev and prev == inp._find_game_hwnd():
+        prev = None
+
+    parked = False
+    if config.PARK_GAME_OFFSCREEN and config.CAPTURE_MODE == "window":
+        parked = inp.park_game()
+    if prev:
+        print("[โพ] คืนโฟกัสให้ผู้ใช้ระหว่างรอ")
+        inp.restore_foreground(prev)
+
+    try:
+        return wait_processing(sct, on_status)
+    finally:
+        if parked:
+            inp.unpark_game()
+        inp.focus_game()
 
 
 def one_cycle(sct, state, on_status=None):
@@ -342,7 +385,7 @@ def one_cycle(sct, state, on_status=None):
     status("กด E เริ่มแปรรูป")
     if press_start_process(sct):
         status("รอแปรรูปเสร็จ")
-        wait_processing(sct, on_status)
+        _wait_and_release(sct, on_status)
         return True
 
     # โพไม่ติด = แร่หมด -> ไปเอาจากท้ายรถ
@@ -363,5 +406,5 @@ def one_cycle(sct, state, on_status=None):
         return False
 
     status("รอแปรรูปเสร็จ")
-    wait_processing(sct, on_status)
+    _wait_and_release(sct, on_status)
     return True

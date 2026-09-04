@@ -49,7 +49,9 @@ def acquire_single_instance():
     return k32.GetLastError() != 183      # ERROR_ALREADY_EXISTS
 
 
-status = {"text": "พร้อม - กด F10 เริ่ม (F11 ซ่อน HUD)", "color": "#cccccc"}
+status = {"text": f"พร้อม - กด {config.KEY_TOGGLE.upper()} เริ่ม "
+                  f"({config.KEY_TOGGLE_HUD.upper()} ซ่อน HUD)",
+          "color": "#cccccc"}
 stop_flag = [False]
 
 
@@ -93,7 +95,7 @@ def bot_loop():
         else:
             request_abort()
             inp.unpark_game()
-            set_status("พัก - กด F10 เริ่มต่อ", "#f39c12")
+            set_status(f"พัก - กด {config.KEY_TOGGLE.upper()} เริ่มต่อ", "#f39c12")
 
     keyboard.add_hotkey(config.KEY_TOGGLE, toggle)
 
@@ -135,7 +137,7 @@ def bot_loop():
                     state["active"] = False
                     request_abort()
                     inp.unpark_game()
-                    set_status(f"พลาดติดกัน {fails} รอบ - หยุดบอท (กด F10 เริ่มใหม่)",
+                    set_status(f"พลาดติดกัน {fails} รอบ - หยุด (กด {config.KEY_TOGGLE.upper()} เริ่มใหม่)",
                                "#e74c3c")
                     fails = 0
                 else:

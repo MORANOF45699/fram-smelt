@@ -156,8 +156,9 @@ PARK_GAME_OFFSCREEN = False
 RESTORE_FOCUS_AFTER = True
 
 # ===== ปุ่ม =====
-KEY_TOGGLE = "f10"
-KEY_TOGGLE_HUD = "f11"
+# ใช้คนละปุ่มกับบอทอื่น ไม่งั้นกดทีเดียวโดนทุกตัวที่เปิดอยู่
+KEY_TOGGLE = "f8"
+KEY_TOGGLE_HUD = "f9"
 
 
 def _load_calibration():
@@ -197,7 +198,7 @@ def _load_user_config():
                     "WALK_PREP_AFTER"):
             if key in data:
                 g[key] = float(data[key])
-        for key in ("CAPTURE_MODE",):
+        for key in ("CAPTURE_MODE", "KEY_TOGGLE", "KEY_TOGGLE_HUD"):
             if key in data:
                 g[key] = str(data[key])
         for key in ("PARK_GAME_OFFSCREEN", "RESTORE_FOCUS_AFTER", "WALK_PREP"):

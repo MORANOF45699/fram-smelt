@@ -33,6 +33,8 @@ defaults = {
     "CAPTURE_MODE": "screen",
     "PARK_GAME_OFFSCREEN": False,
     "RESTORE_FOCUS_AFTER": True,
+    "KEY_TOGGLE": "f8",
+    "KEY_TOGGLE_HUD": "f9",
 }
 
 
@@ -141,6 +143,9 @@ def main():
         print(f"  [c] วิธีจับภาพ               : {cap}")
         print(f"  [p] จอดเกมไว้นอกจอ           : {park}")
         print(f"  [i] ความถี่สแกน              : {cfg['CHECK_INTERVAL']:.1f} วิ")
+        print(f"  [k] ปุ่มเริ่ม/พัก             : {cfg['KEY_TOGGLE'].upper()} "
+              f"(ซ่อน HUD = {cfg['KEY_TOGGLE_HUD'].upper()})")
+        print("      * บอทหลายตัวต้องใช้คนละปุ่ม ไม่งั้นกดทีเดียวโดนหมด")
         print("-" * 62)
         print("  [s] บันทึกและออก        [x] ออกโดยไม่บันทึก")
         print("=" * 62)
@@ -186,6 +191,13 @@ def main():
                 input("  กด Enter เพื่อไปต่อ...")
         elif choice == "i":
             cfg["CHECK_INTERVAL"] = ask_number("สแกนทุกกี่วิ", cfg["CHECK_INTERVAL"])
+        elif choice == "k":
+            val = input(f"ปุ่มเริ่ม/พัก [เดิม {cfg['KEY_TOGGLE']}]: ").strip().lower()
+            if val:
+                cfg["KEY_TOGGLE"] = val
+            val = input(f"ปุ่มซ่อน HUD [เดิม {cfg['KEY_TOGGLE_HUD']}]: ").strip().lower()
+            if val:
+                cfg["KEY_TOGGLE_HUD"] = val
         elif choice == "s":
             if save_config(cfg):
                 input("กด Enter เพื่อปิดหน้าต่าง...")

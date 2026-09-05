@@ -22,8 +22,8 @@
     "E_MENU_DELAY": 2.5,
     "TRUNK_OPEN_DELAY": 3.0,
     "WALK_SETTLE_DELAY": 1.0,
-    "CAPTURE_MODE": "screen",
-    "PARK_GAME_OFFSCREEN": false,
+    "CAPTURE_MODE": "window",
+    "PARK_GAME_OFFSCREEN": true,
     "RESTORE_FOCUS_AFTER": true,
     "KEY_TOGGLE": "f10",
     "KEY_TOGGLE_HUD": "f11"

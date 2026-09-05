@@ -53,31 +53,6 @@ def _scale_template(img):
 _cache = {}
 
 
-def _colour_sig(bgr):
-    """
-    ลายเซ็นสีของไอคอน: (hue เฉลี่ยแบบวงกลม, ความอิ่มสีเฉลี่ย)
-    ดูเฉพาะพิกเซลสว่าง = ตัวไอคอน ไม่เอาพื้นหลังดำของช่อง
-    """
-    hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
-    mask = hsv[:, :, 2] > 60
-    if int(mask.sum()) < 20:
-        return None
-    hue_deg = hsv[:, :, 0][mask].astype(float) * 2.0
-    sat = hsv[:, :, 1][mask].astype(float)
-    ang = np.deg2rad(hue_deg)
-    hue = np.rad2deg(np.arctan2(np.sin(ang).mean(), np.cos(ang).mean())) % 360.0
-    return hue, float(sat.mean())
-
-
-def _colour_gap(a, b):
-    """ต่างกันแค่ไหน คืน (องศา hue, ความอิ่มสี)"""
-    if a is None or b is None:
-        return 0.0, 0.0
-    dh = abs(a[0] - b[0])
-    dh = min(dh, 360.0 - dh)
-    return dh, abs(a[1] - b[1])
-
-
 def _template(path):
     if path not in _cache:
         img = _imread(path)
@@ -125,53 +100,59 @@ def is_processing(sct):
 def find_item(sct, template_path, region, label="ไอเทม"):
     """
     หาช่องไอเทมในบริเวณที่กำหนด
-
-    แร่คนละชนิดรูปทรงเหมือนกันแต่คนละสี (เหล็กสีเทา ทองแดงสีส้ม)
-    template matching ดูรูปทรงเป็นหลัก จึงสับสนได้ ต้องเทียบสีซ้ำอีกชั้น
-    ตัวที่รูปเข้าแต่สีไม่ตรงจะถูกข้ามไปดูตัวถัดไป
-
     Returns: (x, y) กลางช่อง หรือ None
     """
     tmpl = _template(template_path)
     if tmpl is None:
-        print(f"[detector] ไม่พบ {os.path.basename(template_path)} - รัน calibrate ก่อน")
+        print(f"[detector] ⚠ ไม่พบ {os.path.basename(template_path)} — รัน calibrate ก่อน")
         return None
 
     scene = _grab(sct, region)
     if tmpl.shape[0] > scene.shape[0] or tmpl.shape[1] > scene.shape[1]:
         return None
+    _, score, _, loc = cv2.minMaxLoc(cv2.matchTemplate(scene, tmpl,
+                                                       cv2.TM_CCOEFF_NORMED))
+    if score < config.TEMPLATE_MATCH_THRESHOLD:
+        print(f"[detector] ⚠ หา{label}ไม่เจอ (score={score:.2f})")
+        return None
 
-    res = cv2.matchTemplate(scene, tmpl, cv2.TM_CCOEFF_NORMED)
     th, tw = tmpl.shape[:2]
-    want = _colour_sig(tmpl) if config.CHECK_ITEM_COLOUR else None
-    best_score = None
+    x = region["left"] + loc[0] + tw // 2
+    y = region["top"] + loc[1] + th // 2
+    print(f"[detector] เจอ{label}ที่ ({x}, {y}) score={score:.2f}")
+    return (x, y)
 
-    for _ in range(config.MATCH_CANDIDATES):
-        _, score, _, loc = cv2.minMaxLoc(res)
-        if best_score is None:
-            best_score = score
-        if score < config.TEMPLATE_MATCH_THRESHOLD:
-            break
 
-        if want is not None:
-            patch = scene[loc[1]:loc[1] + th, loc[0]:loc[0] + tw]
-            dh, ds = _colour_gap(want, _colour_sig(patch))
-            if ds > config.COLOUR_SAT_TOLERANCE or dh > config.COLOUR_HUE_TOLERANCE:
-                print(f"[detector] เจอรูปคล้าย{label} (score={score:.2f}) "
-                      f"แต่สีไม่ตรง (hue ต่าง {dh:.0f}° sat ต่าง {ds:.0f}) - ข้าม")
-                # ลบยอดนี้ทิ้งแล้วดูตัวถัดไป
-                x0 = max(0, loc[0] - tw // 2)
-                y0 = max(0, loc[1] - th // 2)
-                res[y0:loc[1] + th // 2, x0:loc[0] + tw // 2] = -1.0
-                continue
+def region_snapshot(sct, region):
+    """ภาพย่อของบริเวณหนึ่ง ไว้เทียบว่ามีอะไรเปลี่ยนไปไหม"""
+    return _grab(sct, region).copy()
 
-        x = region["left"] + loc[0] + tw // 2
-        y = region["top"] + loc[1] + th // 2
-        print(f"[detector] เจอ{label}ที่ ({x}, {y}) score={score:.2f}")
-        return (x, y)
 
-    print(f"[detector] หา{label}ไม่เจอ (score สูงสุด={best_score:.2f})")
-    return None
+def region_changed(sct, region, before, min_px=200):
+    """
+    บริเวณนี้เปลี่ยนไปจากภาพ before ไหม
+    ใช้ยืนยันว่า "มีของถูกย้ายออกไปจริง" แม้จะยังเหลือของชนิดเดิมอยู่
+    """
+    after = _grab(sct, region)
+    if before is None or before.shape != after.shape:
+        return True
+    diff = cv2.absdiff(cv2.cvtColor(before, cv2.COLOR_BGR2GRAY),
+                       cv2.cvtColor(after, cv2.COLOR_BGR2GRAY))
+    changed = cv2.countNonZero(cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)[1])
+    return changed >= min_px
+
+
+def region_diff_pct(sct, region, ref, thr=25):
+    """บริเวณนี้ต่างจากภาพอ้างอิงกี่ % ของพื้นที่"""
+    if ref is None:
+        return 100.0
+    now = _grab(sct, region)
+    if ref.shape != now.shape:
+        return 100.0
+    d = cv2.absdiff(cv2.cvtColor(ref, cv2.COLOR_BGR2GRAY),
+                    cv2.cvtColor(now, cv2.COLOR_BGR2GRAY))
+    changed = cv2.countNonZero(cv2.threshold(d, thr, 255, cv2.THRESH_BINARY)[1])
+    return changed / float(now.shape[0] * now.shape[1]) * 100.0
 
 
 def _prune_debug(name, keep):

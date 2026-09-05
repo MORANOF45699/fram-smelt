@@ -175,35 +175,34 @@ def find_item(sct, template_path, region, label="ไอเทม"):
 
 
 def region_snapshot(sct, region):
-    """ภาพย่อของบริเวณหนึ่ง ไว้เทียบว่ามีอะไรเปลี่ยนไปไหม"""
-    return _grab(sct, region).copy()
+    """เก็บภาพบริเวณหนึ่งไว้เทียบทีหลัง (ขาวดำ เทียบง่ายและทนสีเพี้ยน)"""
+    return cv2.cvtColor(_grab(sct, region), cv2.COLOR_BGR2GRAY)
 
 
-def region_changed(sct, region, before, min_px=200):
+def region_diff_pct(sct, region, before):
     """
-    บริเวณนี้เปลี่ยนไปจากภาพ before ไหม
-    ใช้ยืนยันว่า "มีของถูกย้ายออกไปจริง" แม้จะยังเหลือของชนิดเดิมอยู่
+    บริเวณนี้ต่างจากภาพที่เก็บไว้กี่เปอร์เซ็นต์ของพิกเซล
+
+    ใช้ตอนไม่มี template ให้เทียบ เช่น ดูว่าแถบ Processing ขึ้นหรือหายไป
+    นับเฉพาะพิกเซลที่สว่างต่างเกิน 25 ระดับ - กัน noise กับแสงกระพริบเล็กน้อย
     """
-    after = _grab(sct, region)
-    if before is None or before.shape != after.shape:
-        return True
-    diff = cv2.absdiff(cv2.cvtColor(before, cv2.COLOR_BGR2GRAY),
-                       cv2.cvtColor(after, cv2.COLOR_BGR2GRAY))
-    changed = cv2.countNonZero(cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)[1])
-    return changed >= min_px
+    if before is None:
+        return 0.0
+    now = cv2.cvtColor(_grab(sct, region), cv2.COLOR_BGR2GRAY)
+    if now.shape != before.shape:
+        return 100.0
+    diff = cv2.absdiff(now, before)
+    return float((diff > 25).sum()) * 100.0 / diff.size
 
 
-def region_diff_pct(sct, region, ref, thr=25):
-    """บริเวณนี้ต่างจากภาพอ้างอิงกี่ % ของพื้นที่"""
-    if ref is None:
-        return 100.0
-    now = _grab(sct, region)
-    if ref.shape != now.shape:
-        return 100.0
-    d = cv2.absdiff(cv2.cvtColor(ref, cv2.COLOR_BGR2GRAY),
-                    cv2.cvtColor(now, cv2.COLOR_BGR2GRAY))
-    changed = cv2.countNonZero(cv2.threshold(d, thr, 255, cv2.THRESH_BINARY)[1])
-    return changed / float(now.shape[0] * now.shape[1]) * 100.0
+def region_changed(sct, region, before):
+    """บริเวณนี้เปลี่ยนไปพอจะถือว่ามีอะไรเกิดขึ้นแล้วหรือยัง"""
+    pct = region_diff_pct(sct, region, before)
+    changed = pct >= config.REGION_CHANGE_MIN_PCT
+    print(f"[detector] ภาพบริเวณนี้ต่างไป {pct:.1f}% "
+          f"(เกณฑ์ {config.REGION_CHANGE_MIN_PCT:.0f}%) - "
+          f"{'เปลี่ยนแล้ว' if changed else 'ยังเหมือนเดิม'}")
+    return changed
 
 
 def _prune_debug(name, keep):

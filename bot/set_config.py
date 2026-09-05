@@ -33,8 +33,8 @@ defaults = {
     "CAPTURE_MODE": "screen",
     "PARK_GAME_OFFSCREEN": False,
     "RESTORE_FOCUS_AFTER": True,
-    "KEY_TOGGLE": "f8",
-    "KEY_TOGGLE_HUD": "f9",
+    "KEY_TOGGLE": "f10",
+    "KEY_TOGGLE_HUD": "f11",
 }
 
 

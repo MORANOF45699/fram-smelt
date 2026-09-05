@@ -156,9 +156,10 @@ PARK_GAME_OFFSCREEN = False
 RESTORE_FOCUS_AFTER = True
 
 # ===== ปุ่ม =====
-# ใช้คนละปุ่มกับบอทอื่น ไม่งั้นกดทีเดียวโดนทุกตัวที่เปิดอยู่
-KEY_TOGGLE = "f8"
-KEY_TOGGLE_HUD = "f9"
+# เปิดบอทหลายตัวพร้อมกัน ต้องตั้งให้คนละปุ่ม (set_config เมนู [k])
+# ไม่งั้นกดทีเดียวโดนทุกตัว ตัวที่ทำงานอยู่หยุด ตัวที่พักอยู่เริ่มแทน
+KEY_TOGGLE = "f10"
+KEY_TOGGLE_HUD = "f11"
 
 
 def _load_calibration():

@@ -174,37 +174,6 @@ def find_item(sct, template_path, region, label="ไอเทม"):
     return None
 
 
-def region_snapshot(sct, region):
-    """เก็บภาพบริเวณหนึ่งไว้เทียบทีหลัง (ขาวดำ เทียบง่ายและทนสีเพี้ยน)"""
-    return cv2.cvtColor(_grab(sct, region), cv2.COLOR_BGR2GRAY)
-
-
-def region_diff_pct(sct, region, before):
-    """
-    บริเวณนี้ต่างจากภาพที่เก็บไว้กี่เปอร์เซ็นต์ของพิกเซล
-
-    ใช้ตอนไม่มี template ให้เทียบ เช่น ดูว่าแถบ Processing ขึ้นหรือหายไป
-    นับเฉพาะพิกเซลที่สว่างต่างเกิน 25 ระดับ - กัน noise กับแสงกระพริบเล็กน้อย
-    """
-    if before is None:
-        return 0.0
-    now = cv2.cvtColor(_grab(sct, region), cv2.COLOR_BGR2GRAY)
-    if now.shape != before.shape:
-        return 100.0
-    diff = cv2.absdiff(now, before)
-    return float((diff > 25).sum()) * 100.0 / diff.size
-
-
-def region_changed(sct, region, before):
-    """บริเวณนี้เปลี่ยนไปพอจะถือว่ามีอะไรเกิดขึ้นแล้วหรือยัง"""
-    pct = region_diff_pct(sct, region, before)
-    changed = pct >= config.REGION_CHANGE_MIN_PCT
-    print(f"[detector] ภาพบริเวณนี้ต่างไป {pct:.1f}% "
-          f"(เกณฑ์ {config.REGION_CHANGE_MIN_PCT:.0f}%) - "
-          f"{'เปลี่ยนแล้ว' if changed else 'ยังเหมือนเดิม'}")
-    return changed
-
-
 def _prune_debug(name, keep):
     try:
         old = sorted(f for f in os.listdir(DEBUG_DIR)

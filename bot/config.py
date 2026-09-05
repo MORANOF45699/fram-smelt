@@ -91,6 +91,13 @@ TRUNK_REGION = _region(1070 / 1920, 270 / 1080, 730 / 1920, 520 / 1080)
 ORE_TEMPLATE = os.path.join(TEMPLATE_DIR, "ore_template.png")    # แร่ดิบ (Steel)
 BAR_TEMPLATE = os.path.join(TEMPLATE_DIR, "bar_template.png")    # แท่งที่โพเสร็จ (Steel Bar)
 TEMPLATE_MATCH_THRESHOLD = 0.70
+
+# แร่คนละชนิดทรงเหมือนกันแต่คนละสี (เหล็กสีเทา sat~28 / ทองแดงสีส้ม sat~181)
+# template matching ดูทรงเป็นหลัก เลยต้องเทียบสีซ้ำ ไม่งั้นหยิบผิดชนิด
+CHECK_ITEM_COLOUR = True
+COLOUR_SAT_TOLERANCE = 45.0    # ความอิ่มสีต่างได้ไม่เกินเท่าไหร่
+COLOUR_HUE_TOLERANCE = 35.0    # hue ต่างได้กี่องศา
+MATCH_CANDIDATES = 5           # ถ้าสีไม่ตรง ไล่ดูตัวถัดไปได้กี่ตัว
 INV_SCROLL_RETRIES = 4
 
 # จุดปล่อยของ (ลากข้ามฝั่ง)
